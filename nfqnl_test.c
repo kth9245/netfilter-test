@@ -133,16 +133,19 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg,
 	libnet_tcp_hdr* tcp_hdr = ip + 4*ip_hdr->ip_hl;
 	if(ip_hdr->ip_p == 0x06){
 		char* payload = ip + 4*ip_hdr->ip_hl + 4*(tcp_hdr->th_hl);
-		const char* packet_host = payload+22;
-		if (strncmp(packet_host, host, strlen(host)) == 0){
-			printf("Host rejected\n");
-			return nfq_set_verdict(qh, id, NF_DROP, 0, NULL);
+		for (int i = 0; i < ret; i++){
+			if (strncmp(payload+i, "Host:", 5) == 0){
+				const char* packet_host = payload + i + 6;
+				if (strncmp(packet_host, host, strlen(host)) == 0){
+					printf("Host rejected\n");
+					return nfq_set_verdict(qh, id, NF_DROP, 0, NULL);
+				}		
+			}
 		}
 	}
 	printf("entering callback\n");
 	return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
 }
-
 void dump(unsigned char* buf, int size) {
 	int i;
 	for (i = 0; i < size; i++) {
